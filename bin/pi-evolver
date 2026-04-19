@@ -1,0 +1,352 @@
+#!/usr/bin/env node
+// pi-evolver — CLI for the auto-learning system.
+//
+// Commands:
+//   pi-evolver status              — one-screen summary
+//   pi-evolver show-digest         — cat digest.md
+//   pi-evolver run                 — regenerate digest now (same as daemon)
+//   pi-evolver promote <id>        — turn a promotion candidate into a skill
+//   pi-evolver disable             — set the kill-switch
+//   pi-evolver enable              — clear the kill-switch
+//   pi-evolver tail [N]            — print the last N events (default 10)
+//   pi-evolver install-launchd     — install the launchd 6h job
+//   pi-evolver uninstall-launchd   — remove the launchd job
+//
+// All commands are idempotent and safe to re-run.
+
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import { spawnSync } from 'node:child_process';
+import {
+  EVENTS_FILE, DIGEST_FILE, DIGEST_JSON, DISABLE_FILE, EVOLVER_DIR, LOG_FILE,
+  PERSONALITY_FILE, PERSONALITY_TRAITS,
+  readRecentEvents, analyzeEvents, writeDigest, readDigest, readDigestJson,
+  digestAgeMs, ensureDirs, logLine, isDisabled, rotateEventsIfNeeded,
+  loadPersonality, renderPersonalityLine, renderStrategyWeights,
+} from '../src/lib.mjs';
+
+const HOME = os.homedir();
+const SKILLS_DIR = path.join(HOME, '.agents', 'skills');
+const PLIST_PATH = path.join(HOME, 'Library', 'LaunchAgents', 'com.pi.evolver.plist');
+const LABEL = 'com.pi.evolver';
+
+// --- formatting helpers ---
+function fmtAge(ms) {
+  if (!Number.isFinite(ms)) return 'never';
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.round(s / 60)}m ago`;
+  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
+  return `${Math.round(s / 86400)}d ago`;
+}
+
+function table(rows) {
+  const widths = rows[0].map((_, i) => Math.max(...rows.map(r => String(r[i] ?? '').length)));
+  return rows.map(r => r.map((c, i) => String(c ?? '').padEnd(widths[i])).join('  ')).join('\n');
+}
+
+// --- commands ---
+function cmdStatus() {
+  ensureDirs();
+  const events = readRecentEvents();
+  const analysis = readDigestJson() || analyzeEvents(events);
+  const out = [];
+  out.push(`pi-evolver: ${isDisabled() ? 'DISABLED' : 'active'}`);
+  out.push(`events: ${events.length} analyzable  (file: ${EVENTS_FILE})`);
+  out.push(`digest: ${fs.existsSync(DIGEST_FILE) ? `updated ${fmtAge(digestAgeMs())}` : 'not generated yet — run `pi-evolver run`'}`);
+  out.push('');
+  out.push(`suggested strategy: ${analysis.suggestedStrategy || 'balanced'}`);
+  if (analysis.strategyReason) out.push(`  reason: ${analysis.strategyReason}`);
+  if (analysis.strategyWeights) out.push(`  weights: ${renderStrategyWeights(analysis.strategyWeights)} (repairLoopThreshold=${analysis.strategyWeights.repairLoopThreshold})`);
+  out.push('');
+  const personality = (analysis && analysis.personality) || loadPersonality();
+  out.push(`personality: ${renderPersonalityLine(personality)}`);
+  if (personality.updated_at) out.push(`  last updated: ${personality.updated_at}`);
+  out.push('');
+  const om = analysis.outcomeMix || {};
+  out.push(`recent outcomes: pass=${om.pass||0} crash=${om.crash||0} partial=${om.partial||0} empty=${om.empty||0}`);
+  if (analysis.consecutiveFailures > 0) out.push(`  trailing failure streak: ${analysis.consecutiveFailures}`);
+  if (analysis.consecutiveEmpty > 0) out.push(`  trailing empty streak: ${analysis.consecutiveEmpty}`);
+  out.push('');
+  if ((analysis.recurringErrors || []).length > 0) {
+    out.push('recurring errors:');
+    for (const e of analysis.recurringErrors.slice(0, 5)) {
+      out.push(`  ${e.errsig}  (${e.count}x)${e.sampleSummary ? '  — ' + String(e.sampleSummary).slice(0, 80) : ''}`);
+    }
+    out.push('');
+  }
+  if ((analysis.candidatesForPromotion || []).length > 0) {
+    out.push('candidates for promotion:');
+    for (const c of analysis.candidatesForPromotion.slice(0, 5)) {
+      out.push(`  ${c.id}  (${c.count}x)  — run: pi-evolver promote ${c.id}`);
+    }
+    out.push('');
+  }
+  out.push(`logs: ${LOG_FILE}`);
+  console.log(out.join('\n'));
+  return 0;
+}
+
+function cmdShowDigest() {
+  const md = readDigest();
+  console.log(md || '(no digest yet — run `pi-evolver run`)');
+  return 0;
+}
+
+function cmdRun() {
+  ensureDirs();
+  if (isDisabled()) {
+    console.log('pi-evolver: DISABLED — skipping digest regeneration');
+    console.log(`  re-enable: pi-evolver enable   (or unset PI_EVOLVER_DISABLED)`);
+    logLine('CLI run: skipped (disabled)');
+    return 0;
+  }
+  rotateEventsIfNeeded();
+  const events = readRecentEvents();
+  const analysis = analyzeEvents(events);
+  writeDigest(analysis);
+  logLine(`CLI run: analyzed ${events.length} events; strategy=${analysis.suggestedStrategy}`);
+  console.log(`digest written: ${DIGEST_FILE}`);
+  console.log(`strategy: ${analysis.suggestedStrategy}`);
+  console.log(`candidates for promotion: ${analysis.candidatesForPromotion.length}`);
+  return 0;
+}
+
+function cmdDisable() {
+  ensureDirs();
+  fs.writeFileSync(DISABLE_FILE, `disabled at ${new Date().toISOString()}\n`);
+  console.log(`pi-evolver disabled (touched ${DISABLE_FILE})`);
+  console.log('to re-enable: pi-evolver enable');
+  return 0;
+}
+
+function cmdEnable() {
+  try { fs.unlinkSync(DISABLE_FILE); } catch { /* not present */ }
+  console.log('pi-evolver enabled');
+  return 0;
+}
+
+function cmdTail(args) {
+  const n = parseInt(args[0] || '10', 10);
+  const events = readRecentEvents(n);
+  if (events.length === 0) {
+    console.log('(no events recorded yet)');
+    return 0;
+  }
+  const rows = [['TIMESTAMP', 'OUTCOME', 'TOOLS', 'EDITS', 'ERR', 'DUR', 'CWD', 'SIGNALS']];
+  for (const e of events) {
+    rows.push([
+      e.timestamp,
+      e.outcome,
+      String(e.tool_calls),
+      String(e.edits),
+      String(e.tool_errors),
+      Math.round((e.duration_ms || 0) / 1000) + 's',
+      path.basename(e.cwd || ''),
+      (e.signals || []).join(',').slice(0, 60),
+    ]);
+  }
+  console.log(table(rows));
+  return 0;
+}
+
+function cmdPromote(args) {
+  const id = args[0];
+  if (!id) {
+    console.error('usage: pi-evolver promote <candidate-id>');
+    console.error('run `pi-evolver status` to see candidate IDs');
+    return 2;
+  }
+  const analysis = readDigestJson() || analyzeEvents(readRecentEvents());
+  const match = (analysis.candidatesForPromotion || []).find(c => c.id === id);
+  if (!match) {
+    console.error(`no candidate "${id}" in current digest`);
+    console.error('run `pi-evolver run` to refresh, then `pi-evolver status`');
+    return 2;
+  }
+
+  const skillName = id.replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
+  const skillDir = path.join(SKILLS_DIR, skillName);
+  const skillFile = path.join(skillDir, 'SKILL.md');
+
+  if (fs.existsSync(skillFile)) {
+    console.log(`skill already exists: ${skillFile}`);
+    console.log('open and edit manually, then re-run `pi-evolver run` to refresh the digest');
+    return 0;
+  }
+
+  fs.mkdirSync(skillDir, { recursive: true });
+
+  const recentEvents = readRecentEvents()
+    .filter(e => (e.signals || []).includes(match.errsig))
+    .slice(-5);
+
+  const scaffold = [
+    '---',
+    `name: ${skillName}`,
+    `description: Draft skill promoted from pi-evolver pattern ${match.errsig}. Observed ${match.count} times. EDIT THIS DESCRIPTION before relying on it — the trigger must be precise or the skill will fire on unrelated sessions.`,
+    `tags: [pi-evolver, draft]`,
+    '---',
+    '',
+    `# ${skillName}`,
+    '',
+    `> **DRAFT** — auto-scaffolded by \`pi-evolver promote\`. Review, refine, and commit to \`~/.agents/skills/${skillName}/\`.`,
+    '',
+    '## Pattern',
+    '',
+    `Error signature: \`${match.errsig}\`  (${match.count} occurrences)`,
+    '',
+    '## Recent observations',
+    '',
+    ...recentEvents.map(e => `- \`${e.timestamp}\` — ${e.summary}`),
+    '',
+    '## When to use',
+    '',
+    '_Fill in: what\'s the trigger? What should pi do when this pattern appears?_',
+    '',
+    '## Recipe',
+    '',
+    '1. _Step 1_',
+    '2. _Step 2_',
+    '',
+    '## Verification',
+    '',
+    '_How will you know the fix worked?_',
+    '',
+  ].join('\n');
+
+  fs.writeFileSync(skillFile, scaffold, 'utf8');
+  console.log(`scaffolded skill: ${skillFile}`);
+  console.log('');
+  console.log('next steps:');
+  console.log(`  1. edit ${skillFile} — fill in trigger, recipe, verification`);
+  console.log(`  2. when satisfied, commit it (it\'s just a file)`);
+  console.log(`  3. /reload in Pi to pick it up`);
+  console.log('');
+  if (process.env.EDITOR) {
+    console.log(`opening in $EDITOR (${process.env.EDITOR})...`);
+    spawnSync(process.env.EDITOR, [skillFile], { stdio: 'inherit' });
+  } else {
+    console.log('(tip: set $EDITOR to open this automatically)');
+  }
+  return 0;
+}
+
+function cmdInstallLaunchd() {
+  ensureDirs();
+  const daemonPath = path.join(EVOLVER_DIR, 'daemon.mjs');
+  if (!fs.existsSync(daemonPath)) {
+    console.error(`daemon not found at ${daemonPath}`);
+    return 1;
+  }
+  const nodeBin = process.execPath;
+  const plist = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>               <string>${LABEL}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>${nodeBin}</string>
+        <string>${daemonPath}</string>
+    </array>
+    <key>StartInterval</key>       <integer>21600</integer>
+    <key>RunAtLoad</key>           <true/>
+    <key>StandardOutPath</key>     <string>${path.join(EVOLVER_DIR, 'launchd.stdout.log')}</string>
+    <key>StandardErrorPath</key>   <string>${path.join(EVOLVER_DIR, 'launchd.stderr.log')}</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>            <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+    </dict>
+</dict>
+</plist>
+`;
+  fs.mkdirSync(path.dirname(PLIST_PATH), { recursive: true });
+  fs.writeFileSync(PLIST_PATH, plist);
+  console.log(`wrote ${PLIST_PATH}`);
+
+  // Remove any existing job first (idempotent)
+  spawnSync('launchctl', ['unload', '-w', PLIST_PATH], { stdio: 'ignore' });
+  const load = spawnSync('launchctl', ['load', '-w', PLIST_PATH], { encoding: 'utf8' });
+  if (load.status !== 0) {
+    console.error(`launchctl load failed: ${load.stderr}`);
+    return 1;
+  }
+  console.log(`loaded ${LABEL} — runs every 6h, and immediately via RunAtLoad`);
+  console.log(`verify: launchctl list | grep ${LABEL}`);
+  return 0;
+}
+
+function cmdUninstallLaunchd() {
+  if (fs.existsSync(PLIST_PATH)) {
+    spawnSync('launchctl', ['unload', '-w', PLIST_PATH], { stdio: 'ignore' });
+    fs.unlinkSync(PLIST_PATH);
+    console.log(`removed ${PLIST_PATH}`);
+  } else {
+    console.log(`${PLIST_PATH} not present`);
+  }
+  return 0;
+}
+
+function cmdPersonality(args) {
+  const sub = args[0];
+  if (sub === 'reset') {
+    try { fs.unlinkSync(PERSONALITY_FILE); } catch {}
+    console.log('personality reset to defaults');
+    logLine('personality: reset to defaults via CLI');
+    return 0;
+  }
+  const p = loadPersonality();
+  console.log(`current: ${renderPersonalityLine(p)}`);
+  if (p.updated_at) console.log(`updated: ${p.updated_at}`);
+  console.log(`file:    ${PERSONALITY_FILE}`);
+  console.log('');
+  console.log('to reset to defaults: pi-evolver personality reset');
+  return 0;
+}
+
+function help() {
+  console.log(`pi-evolver — auto-learning from Pi sessions
+
+COMMANDS
+  status                   summary of recent activity and suggestions
+  show-digest              print ~/.pi/evolver/digest.md
+  run                      regenerate digest now
+  tail [N]                 print last N events (default 10)
+  promote <candidate-id>   scaffold a skill from a promotion candidate
+  personality [reset]      show current personality; 'reset' restores defaults
+  disable                  stop recording new events + stop digest injection
+  enable                   re-enable (clears the DISABLED marker)
+  install-launchd          install the 6-hourly macOS job
+  uninstall-launchd        remove the job
+
+FILES
+  events:       ${EVENTS_FILE}
+  digest:       ${DIGEST_FILE}
+  personality:  ${PERSONALITY_FILE}
+  log:          ${LOG_FILE}
+
+KILL-SWITCH
+  env:     PI_EVOLVER_DISABLED=1
+  file:    ${DISABLE_FILE}   (created by 'disable')
+`);
+  return 0;
+}
+
+const [cmd, ...args] = process.argv.slice(2);
+const handlers = {
+  status: cmdStatus,
+  'show-digest': cmdShowDigest,
+  run: cmdRun,
+  tail: () => cmdTail(args),
+  promote: () => cmdPromote(args),
+  personality: () => cmdPersonality(args),
+  disable: cmdDisable,
+  enable: cmdEnable,
+  'install-launchd': cmdInstallLaunchd,
+  'uninstall-launchd': cmdUninstallLaunchd,
+  help, '--help': help, '-h': help,
+};
+const handler = handlers[cmd || 'help'] || help;
+process.exit(handler() ?? 0);

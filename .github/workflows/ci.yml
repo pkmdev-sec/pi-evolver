@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Syntax + unit tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Syntax-check all JavaScript
+        run: |
+          node --check src/lib.mjs
+          node --check src/daemon.mjs
+          node --check bin/pi-evolver
+
+      - name: Syntax-check shell scripts
+        run: |
+          bash -n scripts/install.sh
+          bash -n scripts/uninstall.sh
+
+      - name: Unit tests
+        run: node tests/lib.test.mjs

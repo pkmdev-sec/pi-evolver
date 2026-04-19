@@ -1,0 +1,34 @@
+# ────────────────────────────────────────────────────────────────
+# pi-evolver — gitignore
+#
+# None of the files below should ever be committed. They are per-user
+# state, generated at runtime, or byproducts of local development.
+# ────────────────────────────────────────────────────────────────
+
+# Per-user state (if someone runs the tool from inside the repo dir)
+events.jsonl
+events.archive.jsonl
+digest.md
+digest.json
+personality.json
+evolver.log
+launchd.std*.log
+DISABLED
+
+# Generated previews of the banner
+/tmp-banner-preview.*
+
+# Node / npm (we have zero runtime deps, but people poke around)
+node_modules/
+*.log
+npm-debug.log*
+
+# Editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# CI caches
+.nyc_output/
+coverage/
