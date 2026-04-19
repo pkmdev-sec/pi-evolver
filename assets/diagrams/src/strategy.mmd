@@ -1,0 +1,10 @@
+flowchart TD
+    START([analyze events]) --> Q1{consecutive failures ≥ 3?}
+    Q1 -->|yes| S_INNOVATE["innovate<br/>80% innovate · 5% explore<br/>break the loop"]
+    Q1 -->|no| Q2{consecutive empty ≥ 3?}
+    Q2 -->|yes| S_STEADY["steady-state<br/>55% repair · 15% explore<br/>stop spinning"]
+    Q2 -->|no| Q3{signal saturated?}
+    Q3 -->|yes| S_HARDEN["harden<br/>40% repair · 35% optimize<br/>stabilize first"]
+    Q3 -->|no| Q4{total events ≤ 5?}
+    Q4 -->|yes| S_EARLY["early-stabilize<br/>60% repair · 3% explore<br/>prove stability first"]
+    Q4 -->|no| S_BAL["balanced<br/>50% innovate · 10% explore<br/>default"]

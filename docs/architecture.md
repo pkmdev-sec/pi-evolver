@@ -5,61 +5,14 @@ thinking of forking, porting, or auditing.
 
 ## Component map
 
-```mermaid
-%%{init: {
-  "theme":"base",
-  "themeVariables": {
-    "fontFamily":"ui-sans-serif, -apple-system, Segoe UI, sans-serif",
-    "fontSize":"13px",
-    "actorBkg":"#E0E7FF",
-    "actorBorder":"#6366F1",
-    "actorTextColor":"#1E293B",
-    "signalColor":"#334155",
-    "signalTextColor":"#334155",
-    "labelBoxBkgColor":"#FEF3C7",
-    "labelBoxBorderColor":"#F59E0B",
-    "labelTextColor":"#78350F",
-    "noteBkgColor":"#F5F3FF",
-    "noteBorderColor":"#A78BFA",
-    "noteTextColor":"#5B21B6",
-    "activationBkgColor":"#F1F5F9",
-    "activationBorderColor":"#64748B"
-  }
-}}%%
-sequenceDiagram
-    autonumber
-    participant U as User
-    participant PI as Pi runtime
-    participant EXT as Extension<br/>evolver.ts
-    participant FS as ~/.pi/evolver/
-    participant DAE as daemon.mjs<br/>(launchd, 6 h)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)"  srcset="../assets/diagrams/sequence-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="../assets/diagrams/sequence-light.svg">
+    <img alt="session lifecycle: extension writes events, daemon rewrites digest" src="../assets/diagrams/sequence-light.svg" width="100%">
+  </picture>
+</p>
 
-    U->>PI: start session
-    PI->>EXT: session_start
-    EXT->>FS: (init in-memory stats)
-
-    PI->>EXT: before_agent_start
-    EXT->>FS: read digest.md
-    EXT-->>PI: systemPrompt += digest<br/>(only if non-trivial)
-
-    loop turn
-        PI->>EXT: tool_execution_start
-        PI->>EXT: tool_result
-        EXT->>EXT: count calls,<br/>hash any errors
-    end
-
-    U->>PI: exit (Ctrl+C, /new, /fork)
-    PI->>EXT: session_shutdown
-    EXT->>FS: append 1 event to events.jsonl
-    EXT->>FS: append line to evolver.log
-
-    Note over DAE,FS: (later, up to 6 h) launchd fires daemon
-    DAE->>FS: read last 500 from events.jsonl
-    DAE->>DAE: analyzeEvents()<br/>streaks · saturation · errsigs
-    DAE->>FS: rewrite digest.md + digest.json
-    DAE->>FS: updatePersonality()<br/>nudge ≤ ±0.05,<br/>clamp [0.10, 0.90]
-    DAE->>FS: append line to evolver.log
-```
 
 
 ## Data model
@@ -144,40 +97,14 @@ The whole run takes <100ms on a laptop with 500 events.
 
 ## The strategy decision
 
-```mermaid
-%%{init: {
-  "theme":"base",
-  "themeVariables": {
-    "fontFamily":"ui-sans-serif, -apple-system, Segoe UI, sans-serif",
-    "fontSize":"13px",
-    "primaryColor":"#E0E7FF",
-    "primaryTextColor":"#1E293B",
-    "primaryBorderColor":"#6366F1",
-    "lineColor":"#64748B",
-    "clusterBkg":"#FAFBFF",
-    "clusterBorder":"#CBD5E1",
-    "edgeLabelBackground":"#FFFFFF"
-  }
-}}%%
-flowchart TD
-    START([ analyze events ]) --> Q1{"consecutive<br/>failures ≥ 3?"}
-    Q1 -- yes --> S_INNOVATE["<b>innovate</b><br/><sub>80% innovate · 5% explore</sub><br/><sub>break the loop</sub>"]
-    Q1 -- no --> Q2{"consecutive<br/>empty ≥ 3?"}
-    Q2 -- yes --> S_STEADY["<b>steady-state</b><br/><sub>55% repair · 15% explore</sub><br/><sub>stop spinning</sub>"]
-    Q2 -- no --> Q3{"signal<br/>saturated?"}
-    Q3 -- yes --> S_HARDEN["<b>harden</b><br/><sub>40% repair · 35% optimize</sub><br/><sub>stabilize first</sub>"]
-    Q3 -- no --> Q4{"total<br/>events ≤ 5?"}
-    Q4 -- yes --> S_EARLY["<b>early-stabilize</b><br/><sub>60% repair · 3% explore</sub><br/><sub>prove stability first</sub>"]
-    Q4 -- no --> S_BAL["<b>balanced</b><br/><sub>50% innovate · 10% explore</sub><br/><sub>default</sub>"]
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)"  srcset="../assets/diagrams/strategy-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="../assets/diagrams/strategy-light.svg">
+    <img alt="strategy decision tree: which preset is picked from recent event patterns" src="../assets/diagrams/strategy-light.svg" width="70%">
+  </picture>
+</p>
 
-    classDef decision fill:#FEF3C7,stroke:#F59E0B,stroke-width:2px,color:#78350F
-    classDef strategy fill:#E0E7FF,stroke:#6366F1,stroke-width:2px,color:#1E293B
-    classDef terminal fill:#F1F5F9,stroke:#94A3B8,stroke-width:1.5px,color:#334155
-
-    class Q1,Q2,Q3,Q4 decision
-    class S_INNOVATE,S_STEADY,S_HARDEN,S_EARLY,S_BAL strategy
-    class START terminal
-```
 
 
 The resulting strategy object includes:

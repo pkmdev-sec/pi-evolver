@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 786.9879999999999 427.6" width="786.9879999999999" height="427.6" style="--bg:#ffffff;--fg:#1f2328;--line:#d1d9e0;--accent:#0969da;--muted:#59636e;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+  <marker id="arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+    <polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+</defs>
+<g class="subgraph" data-id="PI" data-label="Pi runtime">
+  <rect x="40" y="81.51833333333333" width="279.948" height="147.60000000000002" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="40" y="81.51833333333333" width="279.948" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="52" y="95.51833333333333" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Pi runtime</text>
+</g>
+<g class="subgraph" data-id="FS" data-label="~/.pi/evolver/">
+  <rect x="494.62199999999996" y="40" width="252.36599999999999" height="347.6" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="494.62199999999996" y="40" width="252.36599999999999" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="506.62199999999996" y="54" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">~/.pi/evolver/</text>
+</g>
+<g class="subgraph" data-id="BG" data-label="Background">
+  <rect x="131.2899999999999" y="257.11833333333334" width="188.06400000000002" height="113.80000000000001" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="131.2899999999999" y="257.11833333333334" width="188.06400000000002" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="143.2899999999999" y="271.11833333333334" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Background</text>
+</g>
+<polyline class="edge" data-from="EXT" data-to="EV" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="append" points="303.948,147.41833333333332 383.33199999999994,147.41833333333335 383.33199999999994,103.43333333333334 476.62199999999996,103.43333333333334 476.62199999999996,100.96666666666667 558.622,100.96666666666667" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="EXT" data-to="DIG" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="read + inject" points="303.948,169.31833333333333 361.948,169.31833333333333 361.948,166.685 476.62199999999996,166.685 476.62199999999996,179.86666666666667 558.622,179.86666666666667" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="DAE" data-to="EV" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="read" points="303.3539999999999,311.87833333333333 349.3539999999999,311.87833333333333 349.3539999999999,265.65000000000003 476.62199999999996,265.65000000000003 476.62199999999996,268.76666666666665 522.622,268.76666666666665 522.622,117.93333333333334 558.622,117.93333333333334" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="DAE" data-to="DIG" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="rewrite" points="303.3539999999999,322.6383333333333 361.3539999999999,322.6383333333333 361.3539999999999,298.95000000000005 476.62199999999996,298.95000000000005 476.62199999999996,278.76666666666665 534.622,278.76666666666665 534.622,196.83333333333334 558.622,196.83333333333334" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="DAE" data-to="PER" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="nudge ±0.05" points="303.3539999999999,333.3983333333333 361.3539999999999,333.3983333333333 361.3539999999999,332.25 476.62199999999996,332.25 476.62199999999996,346.15000000000003 558.622,346.15000000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="EXT" data-to="LOG" data-style="dotted" data-arrow-start="false" data-arrow-end="true" data-label="log" points="303.948,191.21833333333333 404.71599999999995,191.21833333333333 404.71599999999995,210.0333333333333 476.62199999999996,210.0333333333333 476.62199999999996,258.76666666666665 558.622,258.76666666666665" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="DAE" data-to="LOG" data-style="dotted" data-arrow-start="false" data-arrow-end="true" data-label="log" points="303.3539999999999,344.15833333333336 361.3539999999999,344.15833333333336 361.3539999999999,365.55000000000007 476.62199999999996,365.55000000000007 476.62199999999996,356.15000000000003 546.622,356.15000000000003 546.622,275.73333333333335 558.622,275.73333333333335" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
+<g class="edge-label" data-from="EXT" data-to="EV" data-label="append">
+  <rect x="391.33199999999994" y="87.43333333333334" width="53.29" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="417.9769999999999" y="102.58333333333334" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">append</text>
+</g>
+<g class="edge-label" data-from="EXT" data-to="DIG" data-label="read + inject">
+  <rect x="369.948" y="150.685" width="74.674" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="407.28499999999997" y="165.835" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">read + inject</text>
+</g>
+<g class="edge-label" data-from="DAE" data-to="EV" data-label="read">
+  <rect x="404.4" y="249.65" width="40.221999999999994" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="424.51099999999997" y="264.8" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">read</text>
+</g>
+<g class="edge-label" data-from="DAE" data-to="DIG" data-label="rewrite">
+  <rect x="393.70799999999997" y="282.95000000000005" width="50.91400000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="419.16499999999996" y="298.1" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">rewrite</text>
+</g>
+<g class="edge-label" data-from="DAE" data-to="PER" data-label="nudge ±0.05">
+  <rect x="369.3539999999999" y="316.25" width="75.268" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="406.98799999999994" y="331.4" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">nudge ±0.05</text>
+</g>
+<g class="edge-label" data-from="EXT" data-to="LOG" data-label="log">
+  <rect x="412.71599999999995" y="194.0333333333333" width="31.906" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="428.6689999999999" y="209.1833333333333" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">log</text>
+</g>
+<g class="edge-label" data-from="DAE" data-to="LOG" data-label="log">
+  <rect x="412.71599999999995" y="349.55000000000007" width="31.906" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="428.6689999999999" y="364.70000000000005" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">log</text>
+</g>
+<g class="node" data-id="EXT" data-label="Extension
+evolver.ts
+session_start · before_agent_start
+tool_result · session_shutdown" data-shape="rectangle">
+  <rect x="56" y="125.51833333333333" width="247.94799999999998" height="87.60000000000001" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="179.974" y="169.31833333333333" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="179.974" dy="-20.8">Extension</tspan><tspan x="179.974" dy="16.900000000000002">evolver.ts</tspan><tspan x="179.974" dy="16.900000000000002">session_start · before_agent_start</tspan><tspan x="179.974" dy="16.900000000000002">tool_result · session_shutdown</tspan></text>
+</g>
+<g class="node" data-id="EV" data-label="events.jsonl" data-shape="cylinder">
+  <rect x="558.622" y="91" width="113.086" height="36.900000000000006" fill="var(--_node-fill)" stroke="none" />
+  <line x1="558.622" y1="91" x2="558.622" y2="127.9" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <line x1="671.708" y1="91" x2="671.708" y2="127.9" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="615.165" cy="127.9" rx="56.543" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="615.165" cy="91" rx="56.543" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="615.165" y="109.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">events.jsonl</text>
+</g>
+<g class="node" data-id="DIG" data-label="digest.md + digest.json" data-shape="cylinder">
+  <rect x="558.622" y="169.9" width="172.36599999999999" height="36.900000000000006" fill="var(--_node-fill)" stroke="none" />
+  <line x1="558.622" y1="169.9" x2="558.622" y2="206.8" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <line x1="730.9879999999999" y1="169.9" x2="730.9879999999999" y2="206.8" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="644.805" cy="206.8" rx="86.18299999999999" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="644.805" cy="169.9" rx="86.18299999999999" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="644.805" y="188.35000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">digest.md + digest.json</text>
+</g>
+<g class="node" data-id="PER" data-label="personality.json" data-shape="cylinder">
+  <rect x="558.622" y="327.70000000000005" width="136.798" height="36.900000000000006" fill="var(--_node-fill)" stroke="none" />
+  <line x1="558.622" y1="327.70000000000005" x2="558.622" y2="364.6" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <line x1="695.42" y1="327.70000000000005" x2="695.42" y2="364.6" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="627.021" cy="364.6" rx="68.399" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="627.021" cy="327.70000000000005" rx="68.399" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="627.021" y="346.15000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">personality.json</text>
+</g>
+<g class="node" data-id="LOG" data-label="evolver.log" data-shape="cylinder">
+  <rect x="558.622" y="248.8" width="108.64" height="36.900000000000006" fill="var(--_node-fill)" stroke="none" />
+  <line x1="558.622" y1="248.8" x2="558.622" y2="285.70000000000005" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <line x1="667.262" y1="248.8" x2="667.262" y2="285.70000000000005" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="612.942" cy="285.70000000000005" rx="54.32" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="612.942" cy="248.8" rx="54.32" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="612.942" y="267.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">evolver.log</text>
+</g>
+<g class="node" data-id="DAE" data-label="daemon.mjs
+launchd · every 6 h" data-shape="rectangle">
+  <rect x="147.2899999999999" y="301.11833333333334" width="156.06400000000002" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="225.32199999999992" y="328.0183333333333" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="225.32199999999992" dy="-3.9000000000000012">daemon.mjs</tspan><tspan x="225.32199999999992" dy="16.900000000000002">launchd · every 6 h</tspan></text>
+</g>
+</svg>

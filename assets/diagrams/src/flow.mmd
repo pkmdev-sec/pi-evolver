@@ -1,0 +1,23 @@
+flowchart LR
+    subgraph PI["Pi runtime"]
+        EXT["Extension<br/>evolver.ts<br/>session_start · before_agent_start<br/>tool_result · session_shutdown"]
+    end
+
+    subgraph FS["~/.pi/evolver/"]
+        EV[("events.jsonl")]
+        DIG[("digest.md + digest.json")]
+        PER[("personality.json")]
+        LOG[("evolver.log")]
+    end
+
+    subgraph BG["Background"]
+        DAE["daemon.mjs<br/>launchd · every 6 h"]
+    end
+
+    EXT -->|append| EV
+    EXT -->|read + inject| DIG
+    DAE -->|read| EV
+    DAE -->|rewrite| DIG
+    DAE -->|nudge ±0.05| PER
+    EXT -.->|log| LOG
+    DAE -.->|log| LOG

@@ -1,0 +1,33 @@
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant PI as Pi runtime
+    participant EXT as Extension
+    participant FS as ~/.pi/evolver/
+    participant DAE as daemon.mjs
+
+    U->>PI: start session
+    PI->>EXT: session_start
+    EXT->>FS: init in-memory stats
+
+    PI->>EXT: before_agent_start
+    EXT->>FS: read digest.md
+    EXT-->>PI: inject digest into system prompt
+
+    loop each turn
+        PI->>EXT: tool_execution_start
+        PI->>EXT: tool_result
+        EXT->>EXT: count calls, hash errors
+    end
+
+    U->>PI: exit
+    PI->>EXT: session_shutdown
+    EXT->>FS: append event to events.jsonl
+    EXT->>FS: append line to evolver.log
+
+    Note over DAE,FS: launchd fires every 6 h
+    DAE->>FS: read last 500 events
+    DAE->>DAE: analyze streaks, saturation, errsigs
+    DAE->>FS: rewrite digest.md and digest.json
+    DAE->>FS: updatePersonality clamped
+    DAE->>FS: append line to evolver.log
