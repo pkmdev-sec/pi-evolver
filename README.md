@@ -55,28 +55,56 @@ type a command.
 
 ## What it actually does
 
+```mermaid
+%%{init: {
+  "theme":"base",
+  "themeVariables": {
+    "fontFamily":"ui-sans-serif, -apple-system, Segoe UI, sans-serif",
+    "fontSize":"14px",
+    "primaryColor":"#E0E7FF",
+    "primaryTextColor":"#1E293B",
+    "primaryBorderColor":"#6366F1",
+    "lineColor":"#64748B",
+    "clusterBkg":"#FAFBFF",
+    "clusterBorder":"#CBD5E1",
+    "edgeLabelBackground":"#FFFFFF"
+  }
+}}%%
+flowchart LR
+    subgraph PI[" Pi runtime "]
+        EXT["<b>Extension</b><br/>evolver.ts<br/><sub>session_start · before_agent_start<br/>tool_result · session_shutdown</sub>"]
+    end
+
+    subgraph FS[" ~/.pi/evolver/ "]
+        EV[("events.jsonl")]
+        DIG[("digest.md<br/>digest.json")]
+        PER[("personality.json")]
+        LOG[("evolver.log")]
+    end
+
+    subgraph BG[" Background "]
+        DAE["<b>daemon.mjs</b><br/><sub>launchd · every 6 h</sub>"]
+    end
+
+    EXT -- "append" --> EV
+    EXT -- "read + inject" --> DIG
+    DAE -- "read" --> EV
+    DAE -- "rewrite" --> DIG
+    DAE -- "nudge ±0.05" --> PER
+    EXT -.-> LOG
+    DAE -.-> LOG
+
+    classDef actor  fill:#E0E7FF,stroke:#6366F1,stroke-width:2px,color:#1E293B
+    classDef store  fill:#F1F5F9,stroke:#94A3B8,stroke-width:1.5px,color:#334155
+    classDef bg     fill:#FEF3C7,stroke:#F59E0B,stroke-width:2px,color:#78350F
+    classDef log    fill:#F5F3FF,stroke:#A78BFA,stroke-width:1.5px,color:#5B21B6
+
+    class EXT actor
+    class DAE bg
+    class EV,DIG,PER store
+    class LOG log
 ```
- ┌───────────────────────────────┐      ┌───────────────────────────────┐
- │   Pi session (extension)       │      │   launchd (every 6h on macOS) │
- │                                │      │                               │
- │   session_start     ─────┐     │      │   node ~/.pi/evolver/         │
- │   before_agent_start ───┐├──┐  │      │        daemon.mjs             │
- │   tool_result ─────────┐│  │  │      │                               │
- │   session_shutdown ───┐│   │  │      └──────┬────────────────────────┘
- │                       ││   │  │             │
- └───────────────────────┼┼───┼──┘             │
-                         ││   │                │
-         writes metadata ││   │ reads digest   │ reads events, writes digest
-                         ▼▼   │                ▼
-                   ┌──────────────────────────────────────┐
-                   │   ~/.pi/evolver/                      │
-                   │     events.jsonl       (append-only)  │
-                   │     digest.md          (rolling)      │
-                   │     digest.json        (rolling)      │
-                   │     personality.json   (5 floats)     │
-                   │     evolver.log        (audit trail)  │
-                   └──────────────────────────────────────┘
-```
+
 
 Concretely, the **extension** appends one JSON line per session — duration,
 counts, derived signals, outcome — and reads the latest digest to inject a
